@@ -86,7 +86,7 @@ h3 { font-size: 1rem; font-weight: 600; }
 
 .fine { font-size: 0.82rem; }
 
-.paste, .menu-body input, .slot input, .stepper input {
+.paste, .session-sheet input, .slot input, .stepper input {
   width: 100%;
   border: 1px solid var(--line);
   background: var(--card);
@@ -263,34 +263,31 @@ h3 { font-size: 1rem; font-weight: 600; }
 
 .start { width: 100%; }
 
-.menu { position: relative; }
-.menu summary {
-  cursor: pointer;
-  font-weight: 600;
-  min-height: 44px;
-  display: grid;
-  place-items: center;
-  padding: 0 12px;
-  border: 1px solid var(--ink);
-  background: var(--card);
-  list-style: none;
-}
-.menu summary::-webkit-details-marker { display: none; }
+.session-toggle { background: var(--card); }
 
-.menu-body {
-  position: absolute;
-  right: 0;
-  z-index: 4;
-  width: min(280px, 80vw);
-  margin-top: 6px;
-  padding: 12px;
-  background: var(--card);
-  border: 1px solid var(--ink);
+.session-sheet {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  overflow: auto;
+  background: var(--paper);
+  padding: calc(16px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));
   display: grid;
-  gap: 10px;
+  align-content: start;
+  gap: 16px;
 }
 
-.menu-body fieldset {
+.session-sheet-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.session-block { display: grid; gap: 8px; }
+.session-block p { color: var(--muted); }
+
+.session-sheet fieldset {
   border: 0;
   margin: 0;
   padding: 0;
@@ -298,7 +295,11 @@ h3 { font-size: 1rem; font-weight: 600; }
   gap: 6px;
 }
 
-.menu-body legend { font-weight: 600; margin-bottom: 2px; }
+.session-sheet legend { font-weight: 600; margin-bottom: 2px; }
+
+.session-sheet > .ghost,
+.session-block .primary,
+.session-block .ghost { width: 100%; }
 
 .confirm { display: grid; gap: 8px; }
 
@@ -569,6 +570,12 @@ html { scroll-padding-bottom: 96px; }
 }
 
 @media (min-width: 960px) {
+  .session-sheet {
+    left: auto;
+    width: min(420px, 100%);
+    border-left: 1px solid var(--ink);
+  }
+
   .play {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 360px;
@@ -634,7 +641,7 @@ html { scroll-padding-bottom: 96px; }
 }
 
 @media print {
-  .view-tabs, .start-bar, .menu, .stepper button, .court-foot, .action-row { display: none !important; }
+  .view-tabs, .start-bar, .session-toggle, .session-sheet, .stepper button, .court-foot, .action-row { display: none !important; }
   .play[data-view] .panel-round,
   .play[data-view] .panel-draw,
   .play[data-view] .panel-board { display: block !important; }

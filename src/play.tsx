@@ -28,8 +28,22 @@ export function PlayScreen({
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [session.activeRound, view]);
-  const [confirming, setConfirming] = useState(false);
+  const [sessionOpen, setSessionOpen] = useState(false);
+  const [confirming, setConfirming] = useState<"restart" | "players" | null>(null);
   const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!sessionOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setSessionOpen(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [sessionOpen]);
   const table = standings(session);
   const entered = enteredMatchCount(session);
   const finished = entered === ROUND_COUNT * COURT_COUNT;
@@ -81,53 +95,17 @@ export function PlayScreen({
             keeps their team’s points.
           </p>
         </div>
-        <details className="menu">
-          <summary>Session</summary>
-          <div className="menu-body">
-            <button type="button" className="ghost" onClick={() => void copyResults()}>
-              {copied ? "Copied" : "Copy the board"}
-            </button>
-            <h2>Fix a name</h2>
-            <NameList
-              title="Left"
-              names={session.left.map((player) => player.name)}
-              onChange={(index, name) =>
-                patch((current) => ({
-                  left: current.left.map((player, playerIndex) =>
-                    playerIndex === index ? { ...player, name } : player,
-                  ),
-                }))
-              }
-            />
-            <NameList
-              title="Right"
-              names={session.right.map((player) => player.name)}
-              onChange={(index, name) =>
-                patch((current) => ({
-                  right: current.right.map((player, playerIndex) =>
-                    playerIndex === index ? { ...player, name } : player,
-                  ),
-                }))
-              }
-            />
-            {confirming ? (
-              <div className="confirm">
-                <p>Clear these scores and go back to the player list?</p>
-                <button type="button" className="primary" onClick={() => onRetire(sessionToDraft(session))}>
-                  Clear session
-                </button>
-                <button type="button" className="ghost" onClick={() => setConfirming(false)}>
-                  Keep playing
-                </button>
-              </div>
-            ) : (
-              <button type="button" className="text-action danger" onClick={() => setConfirming(true)}>
-                New session
-              </button>
-            )}
-            <p className="fine">Scores stay on this phone.</p>
-          </div>
-        </details>
+        <button
+          type="button"
+          className="ghost session-toggle"
+          aria-expanded={sessionOpen}
+          onClick={() => {
+            setConfirming(null);
+            setSessionOpen(true);
+          }}
+        >
+          Session
+        </button>
       </header>
 
       <nav className="view-tabs" aria-label="Scorekeeper">
@@ -222,6 +200,96 @@ export function PlayScreen({
           finished={finished}
         />
       </div>
+      {sessionOpen && (
+        <div className="session-sheet" role="dialog" aria-label="Session">
+          <div className="session-sheet-head">
+            <h2>Session</h2>
+            <button type="button" className="ghost" onClick={() => setSessionOpen(false)}>
+              Close
+            </button>
+          </div>
+          <section className="session-block">
+            <h3>Start over</h3>
+            <p>Clears every score and returns to round 1. The same twelve players stay.</p>
+            {confirming === "restart" ? (
+              <div className="confirm">
+                <button
+                  type="button"
+                  className="primary"
+                  onClick={() => {
+                    onSession((current) => ({
+                      ...current,
+                      activeRound: 0,
+                      scores: current.scores.map((row) =>
+                        row.map(() => ({ a: null, b: null, linked: current.pointsTotal != null })),
+                      ),
+                    }));
+                    setConfirming(null);
+                    setSessionOpen(false);
+                    setView("round");
+                  }}
+                >
+                  Clear the scores
+                </button>
+                <button type="button" className="ghost" onClick={() => setConfirming(null)}>
+                  Keep playing
+                </button>
+              </div>
+            ) : (
+              <button type="button" className="primary" onClick={() => setConfirming("restart")}>
+                Start over
+              </button>
+            )}
+          </section>
+          <section className="session-block">
+            <h3>Change the players</h3>
+            <p>Clears the scores and opens the name list. The names you typed stay.</p>
+            {confirming === "players" ? (
+              <div className="confirm">
+                <button type="button" className="primary" onClick={() => onRetire(sessionToDraft(session))}>
+                  Back to the names
+                </button>
+                <button type="button" className="ghost" onClick={() => setConfirming(null)}>
+                  Keep playing
+                </button>
+              </div>
+            ) : (
+              <button type="button" className="ghost" onClick={() => setConfirming("players")}>
+                Change the players
+              </button>
+            )}
+          </section>
+          <button type="button" className="ghost" onClick={() => void copyResults()}>
+            {copied ? "Copied" : "Copy the board"}
+          </button>
+          <section className="session-block">
+            <h3>Fix a name</h3>
+            <NameList
+              title="Left"
+              names={session.left.map((player) => player.name)}
+              onChange={(index, name) =>
+                patch((current) => ({
+                  left: current.left.map((player, playerIndex) =>
+                    playerIndex === index ? { ...player, name } : player,
+                  ),
+                }))
+              }
+            />
+            <NameList
+              title="Right"
+              names={session.right.map((player) => player.name)}
+              onChange={(index, name) =>
+                patch((current) => ({
+                  right: current.right.map((player, playerIndex) =>
+                    playerIndex === index ? { ...player, name } : player,
+                  ),
+                }))
+              }
+            />
+          </section>
+          <p className="fine">Scores stay on this phone.</p>
+        </div>
+      )}
     </div>
   );
 }
