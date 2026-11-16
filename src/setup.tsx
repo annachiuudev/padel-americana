@@ -232,7 +232,8 @@ export function SetupScreen({ draft, onDraft, onStart }: SetupProps) {
           <p>
             Three courts, nobody sits out. Partners are always one left player and one right player. Over the
             night every left player partners every right player once, and faces every right player once. Two
-            players on the same side meet as opponents at most twice.
+            players on the same side meet as opponents at most twice. Each player uses all three courts, and
+            nobody stays on the same court for three rounds in a row.
           </p>
           <p>Ties on the board go to wins, then point difference.</p>
           <ol className="draw-list">

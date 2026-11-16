@@ -1,8 +1,9 @@
 import { COURT_COUNT, ROUND_COUNT, SIDES } from "./schedule";
-import { emptyDraft } from "./logic";
+import { emptyDraft, sessionToDraft } from "./logic";
 import type { CourtScore, Player, Session, SetupDraft, Store } from "./types";
 
-const KEY = "cross-court.v1";
+const KEY = "cross-court.v2";
+const PREVIOUS_KEY = "cross-court.v1";
 
 export function defaultStore(): Store {
   return { version: 1, draft: emptyDraft(), session: null };
@@ -78,8 +79,13 @@ export function sanitizeStore(value: unknown): Store {
 export function loadStore(): Store {
   try {
     const raw = globalThis.localStorage?.getItem(KEY);
-    if (!raw) return defaultStore();
-    return sanitizeStore(JSON.parse(raw) as unknown);
+    if (raw) return sanitizeStore(JSON.parse(raw) as unknown);
+    const previous = globalThis.localStorage?.getItem(PREVIOUS_KEY);
+    if (!previous) return defaultStore();
+    const stored = sanitizeStore(JSON.parse(previous) as unknown);
+    if (!stored.session) return stored;
+    // Scores were stored against the old court order, so keep the names and start the new draw clean.
+    return { version: 1, draft: sessionToDraft(stored.session), session: null };
   } catch {
     return defaultStore();
   }
